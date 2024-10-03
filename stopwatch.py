@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import time
 import json
@@ -32,6 +34,8 @@ class Stopwatch:
             return f"{days}d {hours}:{minutes}:{seconds}.{tenths}"
         else:
             return f"{weeks}w {days}d {hours}:{minutes}:{seconds}.{tenths}"
+        
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 parser = argparse.ArgumentParser(prog="Stopwatch",
                                  description="Provides elapsed time")
@@ -41,38 +45,43 @@ group.add_argument("-x", "--reset", help="resets timer", action="store_true")
 group.add_argument("-p", "--pause", help="adds the current time to start_time", action="store_true")
 group.add_argument("-r", "--resume", help="resumes timer from elapsed time", action="store_true")
 args = parser.parse_args()
+
+start_file = os.path.join(script_dir, "start.json")
+pause_file = os.path.join(script_dir, "pause.json")
+
+
 stopwatch = Stopwatch()
 if args.start:
-    if not os.path.exists("pause.json"):
+    if not os.path.exists(pause_file):
         stopwatch.start_timer = time.time()
         print("Timer started")
-        with open("start.json", "w") as file:
+        with open(start_file, "w") as file:
             json.dump(stopwatch.start_timer, file)
     else:
         print("Timer in progress")
 
 if args.pause:
-    if os.path.exists("start.json"):
-        with open("start.json", "r") as file:
+    if os.path.exists(start_file):
+        with open(start_file, "r") as file:
             stopwatch.start_timer = json.load(file)
         if stopwatch.start_timer != 0:
             stopwatch.stop_timer = time.time()
-            if not os.path.exists("pause.json"):
+            if not os.path.exists(pause_file):
                 stopwatch.elapsed_time = 0
             else:
-                with open('pause.json', "r") as file:
+                with open(pause_file, "r") as file:
                     stopwatch.elapsed_time = json.load(file)
             stopwatch.elapsed_time += stopwatch.stop_timer - stopwatch.start_timer
-            with open("pause.json", "w") as file:
+            with open(pause_file, "w") as file:
                 json.dump(stopwatch.elapsed_time, file)
             stopwatch.start_timer = 0
-            with open("start.json", "w") as file:
+            with open(start_file, "w") as file:
                 json.dump(stopwatch.start_timer, file)
             print("Timer Stopped")
             print(stopwatch.formatting(stopwatch.elapsed_time))
         else:
-            if os.path.exists('pause.json'):
-                with open('pause.json', "r") as file:
+            if os.path.exists(pause_file):
+                with open(pause_file, "r") as file:
                     stopwatch.elapsed_time = json.load(file)
                 print(stopwatch.formatting(stopwatch.elapsed_time))
             else:
@@ -81,19 +90,19 @@ if args.pause:
         print("Timer does not exist or has not been started")
 
 if args.resume:
-    if os.path.exists("pause.json") and os.path.exists("start.json"):
+    if os.path.exists(pause_file) and os.path.exists(start_file):
         stopwatch.start_timer = time.time()
-        with open("pause.json", "r") as file:
+        with open(pause_file, "r") as file:
             stopwatch.elapsed_time = json.load(file)
         print("Timer running")
-        with open("start.json", "w") as file:
+        with open(start_file, "w") as file:
             json.dump(stopwatch.start_timer, file)
     else:
         print("Timer is not paused or Timer does not exist")
 
 if args.reset:
-    if os.path.exists("start.json"):
-        os.remove("start.json")
-    if os.path.exists("pause.json"):
-        os.remove("pause.json")
+    if os.path.exists(start_file):
+        os.remove(start_file)
+    if os.path.exists(pause_file):
+        os.remove(pause_file)
     print("Timer reset")
